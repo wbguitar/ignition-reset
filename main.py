@@ -1,5 +1,13 @@
-import lambdatest
+import ignition
 
-# Press the green button in the gutter to run the script.
+config = {
+    'webdriver': 'edge',
+    'gateway': 'http://localhost:80',
+    'auth': {
+        'username': 'admin',
+        'password': 'admin'
+    }
+}
+
 if __name__ == '__main__':
-    lambdatest.test_lambdatest_todo_app()
+    ignition.run(config)
