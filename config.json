@@ -4,5 +4,6 @@
     "auth": {
         "username": "admin",
         "password": "gdm2020"
-    }
+    },
+    "headless": false
 }

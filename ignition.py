@@ -1,30 +1,39 @@
-import traceback
+import traceback, sys, time
 
+import msedge.selenium_tools
 import selenium.webdriver.common.by
 from selenium import webdriver
-import sys
-
-from selenium.common import TimeoutException
+from selenium.common.exceptions import SessionNotCreatedException, TimeoutException
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-import time
 
 
 def run(config):
     driver = None
-    wait = 0.5
     timeout = 5.0
-
     try:
         if config['webdriver'].lower() == 'edge':
-            driver = webdriver.Edge()
+            opt = msedge.selenium_tools.EdgeOptions()
+            if config.get('headless', False):
+                opt.use_chromium = True
+                opt.add_argument('--headless')
+            driver = msedge.selenium_tools.webdriver.WebDriver('msedgedriver.exe', options=opt)
         elif config['webdriver'].lower() == 'firefox':
-            driver = webdriver.Firefox()
+            driver = webdriver.Firefox() # TO BE TESTED
         elif config['webdriver'].lower() == 'chrome':
-            driver = webdriver.Chrome()
+            opt = Options()
+            if config.get('headless', False):
+                opt.add_argument('--headless')
+            try:
+                driver = webdriver.Chrome(options=opt)
+            except selenium.common.SessionNotCreatedException:
+                # driver not compatible?
+                drv_path = ChromeDriverManager().install()
+                driver = webdriver.Chrome(drv_path, options=opt)
 
         # driver.minimize_window()
         driver.get(config['gateway'])
@@ -32,13 +41,13 @@ def run(config):
         def element_loaded(*selector):
             try:
                 return WebDriverWait(driver, timeout).until(EC.presence_of_element_located(selector))
-            except TimeoutException:
-                raise TimeoutException(msg=f"Timeout while loading {[it for it in selector]}")
+            except selenium.common.TimeoutException:
+                raise selenium.common.TimeoutException(msg=f"Timeout while loading {[it for it in selector]}")
 
         # expired = driver.find_element(By.CSS_SELECTOR, 'div.alert-left h2').text
         expired = element_loaded(By.CSS_SELECTOR, 'div.alert-left h2').text
-        # if expired != 'Trial Expired':
-        #     return
+        if expired != 'Trial Expired':
+            return
 
         # go to login page
         # driver.find_element(By.ID, 'login-link').click()
@@ -56,8 +65,14 @@ def run(config):
         element_loaded(By.CSS_SELECTOR, 'a#reset-trial-anchor').click()
     except TimeoutException:
         print(f"Timeout: {traceback.format_exc()}")
+    except SessionNotCreatedException:
+        print(f"Cannot create session: {traceback.format_exc()}")
     except Exception as e:
         print(traceback.format_exc())
     finally:
         if driver:
+            if not config.get('headless', False):
+                time.sleep(3) #
             driver.quit()
+
+
