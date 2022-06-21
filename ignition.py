@@ -1,4 +1,4 @@
-import traceback, sys, time
+import traceback, sys, time, logging
 
 import msedge.selenium_tools
 import selenium.webdriver.common.by
@@ -12,22 +12,26 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
 
-def run(config):
+def reset_trial(config):
     driver = None
     timeout = 5.0
     try:
         if config['webdriver'].lower() == 'edge':
+            logging.debug(f"Creating Edge webdriver")
             opt = msedge.selenium_tools.EdgeOptions()
             if config.get('headless', False):
                 opt.use_chromium = True
                 opt.add_argument('--headless')
+                logging.debug(f"Adding headless argument")
             driver = msedge.selenium_tools.webdriver.WebDriver('msedgedriver.exe', options=opt)
         elif config['webdriver'].lower() == 'firefox':
-            driver = webdriver.Firefox() # TO BE TESTED
+            driver = webdriver.Firefox()  # TO BE TESTED
         elif config['webdriver'].lower() == 'chrome':
+            logging.debug(f"Creating Chrome webdriver")
             opt = Options()
             if config.get('headless', False):
                 opt.add_argument('--headless')
+                logging.debug(f"Adding headless argument")
             try:
                 driver = webdriver.Chrome(options=opt)
             except selenium.common.SessionNotCreatedException:
@@ -35,7 +39,7 @@ def run(config):
                 drv_path = ChromeDriverManager().install()
                 driver = webdriver.Chrome(drv_path, options=opt)
 
-        # driver.minimize_window()
+        logging.debug(f"Opening page {config['gateway']}")
         driver.get(config['gateway'])
 
         def element_loaded(*selector):
@@ -47,6 +51,7 @@ def run(config):
         # expired = driver.find_element(By.CSS_SELECTOR, 'div.alert-left h2').text
         expired = element_loaded(By.CSS_SELECTOR, 'div.alert-left h2').text
         if expired != 'Trial Expired':
+            logging.debug("Trial not yet expired, skipping")
             return
 
         # go to login page
@@ -63,16 +68,18 @@ def run(config):
         element_loaded(By.CSS_SELECTOR, 'div.submit-button').click()
         # reset trial
         element_loaded(By.CSS_SELECTOR, 'a#reset-trial-anchor').click()
+
+        logging.info(f"Trial reset for {config['gateway']}")
     except TimeoutException:
-        print(f"Timeout: {traceback.format_exc()}")
+        logging.error(f"Timeout: {traceback.format_exc()}")
     except SessionNotCreatedException:
-        print(f"Cannot create session: {traceback.format_exc()}")
+        logging.error(f"Cannot create session: {traceback.format_exc()}")
     except Exception as e:
-        print(traceback.format_exc())
+        logging.error(traceback.format_exc())
     finally:
         if driver:
             if not config.get('headless', False):
-                time.sleep(3) #
+                time.sleep(3)  #
+
+            logging.debug("Closing webdriver")
             driver.quit()
-
-
