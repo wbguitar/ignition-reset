@@ -1,0 +1,8 @@
+{
+    "webdriver": "edge",
+    "gateway": "http://desktop07:8088",
+    "auth": {
+        "username": "admin",
+        "password": "gdm2020"
+    }
+}

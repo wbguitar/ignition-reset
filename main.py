@@ -1,13 +1,8 @@
 import ignition
-
-config = {
-    'webdriver': 'edge',
-    'gateway': 'http://localhost:80',
-    'auth': {
-        'username': 'admin',
-        'password': 'admin'
-    }
-}
+import json
 
 if __name__ == '__main__':
+    config = ''
+    with open('config.json') as f:
+        config = json.load(f)
     ignition.run(config)
