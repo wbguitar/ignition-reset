@@ -2,9 +2,13 @@
 
 ## Prerequisites
 
-First Selenium needs to be installed inside the python environment, for this simply run:
+First dependency libraries needs to be installed:
 
-`pip install selenium`
+```
+pip install selenium
+pip install webdriver-manager
+pip install msedge-selenium_tools
+```
 
 The WebDrivers can be found here:
 
